@@ -243,6 +243,30 @@ create policy "requests insert" on public.requests for insert to authenticated w
 create policy "requests update" on public.requests for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
 create policy "requests delete" on public.requests for delete to authenticated using (household_id = public.current_household_id());
 
+-- ============ events (one-off events + yearly-recurring birthdays) ============
+-- recurs_yearly events (birthdays, anniversaries) are matched by month+day
+-- only, regardless of event_date's year, so they don't need re-entering
+-- every year — event_date just anchors the month/day (and, for a birthday,
+-- doubles as a record of the actual birth year if entered accurately).
+create table public.events (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null default public.current_household_id() references public.households(id),
+  title text not null,
+  event_date date not null,
+  recurs_yearly boolean not null default false,
+  notes text,
+  created_by uuid not null default auth.uid() references public.profiles(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index on public.events (event_date);
+
+alter table public.events enable row level security;
+create policy "events readable" on public.events for select to authenticated using (household_id = public.current_household_id());
+create policy "events insert" on public.events for insert to authenticated with check (created_by = auth.uid() and household_id = public.current_household_id());
+create policy "events update" on public.events for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
+create policy "events delete" on public.events for delete to authenticated using (household_id = public.current_household_id());
+
 -- ============ bills (monthly utilities / rent / other costs) ============
 create table public.bills (
   id uuid primary key default gen_random_uuid(),
@@ -250,11 +274,13 @@ create table public.bills (
   category text not null,        -- e.g. Rent, Electricity, Internet, Water, Gas, Other
   amount numeric(10, 2) not null check (amount >= 0),
   month date not null,           -- always the 1st of the month, e.g. 2026-07-01
+  due_date date,                 -- optional specific due day, used for "upcoming bills" reminders
   notes text,
   created_by uuid not null default auth.uid() references public.profiles(id),
   created_at timestamptz not null default now()
 );
 create index on public.bills (month);
+create index on public.bills (due_date);
 
 alter table public.bills enable row level security;
 create policy "bills readable" on public.bills for select to authenticated using (household_id = public.current_household_id());
@@ -273,6 +299,8 @@ create trigger contacts_set_updated_at before update on public.contacts
 create trigger requests_set_updated_at before update on public.requests
   for each row execute function public.set_updated_at();
 create trigger day_status_set_updated_at before update on public.day_status
+  for each row execute function public.set_updated_at();
+create trigger events_set_updated_at before update on public.events
   for each row execute function public.set_updated_at();
 
 -- ============ Realtime ============

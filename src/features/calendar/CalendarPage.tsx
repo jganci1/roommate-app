@@ -6,6 +6,7 @@ import { getMonthGridDays, monthYearLabel, shiftMonth, toDateKey } from '../../u
 import { useDayStatus } from './useDayStatus'
 import { MonthGrid } from './MonthGrid'
 import { DayDetailPanel } from './DayDetailPanel'
+import { TodaySummary } from './TodaySummary'
 
 export function CalendarPage() {
   const [monthAnchor, setMonthAnchor] = useState(new Date())
@@ -21,6 +22,8 @@ export function CalendarPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <TodaySummary />
+
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
           {monthYearLabel(monthAnchor)}

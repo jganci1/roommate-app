@@ -63,7 +63,19 @@ export interface Bill {
   category: string
   amount: number
   month: string
+  due_date: string | null
   notes: string | null
   created_by: string
   created_at: string
+}
+
+export interface Event {
+  id: string
+  title: string
+  event_date: string
+  recurs_yearly: boolean
+  notes: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
 }

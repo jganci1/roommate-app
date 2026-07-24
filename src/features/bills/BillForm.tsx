@@ -6,10 +6,11 @@ const categories = ['Rent', 'Electricity', 'Internet', 'Water', 'Gas', 'Trash', 
 export function BillForm({
   onAdd,
 }: {
-  onAdd: (category: string, amount: number, notes: string) => Promise<void>
+  onAdd: (category: string, amount: number, notes: string, dueDate: string | null) => Promise<void>
 }) {
   const [category, setCategory] = useState(categories[0])
   const [amount, setAmount] = useState('')
+  const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -18,8 +19,9 @@ export function BillForm({
     const value = Number(amount)
     if (!value || value < 0) return
     setSubmitting(true)
-    await onAdd(category, value, notes.trim())
+    await onAdd(category, value, notes.trim(), dueDate || null)
     setAmount('')
+    setDueDate('')
     setNotes('')
     setSubmitting(false)
   }
@@ -48,6 +50,15 @@ export function BillForm({
           className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
         />
       </div>
+      <label className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400">
+        Due date (optional)
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+        />
+      </label>
       <input
         placeholder="Notes (optional)"
         value={notes}

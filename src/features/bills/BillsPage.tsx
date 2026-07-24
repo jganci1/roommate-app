@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { format } from 'date-fns'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -56,6 +57,11 @@ export function BillsPage() {
                     <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
                       {b.category}
                     </p>
+                    {b.due_date && (
+                      <p className="text-xs text-slate-400 dark:text-slate-500">
+                        Due {format(new Date(`${b.due_date}T00:00:00`), 'MMM d')}
+                      </p>
+                    )}
                     {b.notes && (
                       <p className="text-xs text-slate-400 dark:text-slate-500">{b.notes}</p>
                     )}

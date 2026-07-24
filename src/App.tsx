@@ -10,6 +10,7 @@ import { SupplyListPage } from './features/supplies/SupplyListPage'
 import { ContactsPage } from './features/contacts/ContactsPage'
 import { RequestsPage } from './features/requests/RequestsPage'
 import { BillsPage } from './features/bills/BillsPage'
+import { EventsPage } from './features/events/EventsPage'
 import { RequireHousehold } from './household/RequireHousehold'
 import { OnboardingPage } from './household/OnboardingPage'
 import { HouseholdPage } from './household/HouseholdPage'
@@ -31,6 +32,7 @@ function App() {
                 <Route path="/contacts" element={<ContactsPage />} />
                 <Route path="/requests" element={<RequestsPage />} />
                 <Route path="/bills" element={<BillsPage />} />
+                <Route path="/events" element={<EventsPage />} />
                 <Route path="/household" element={<HouseholdPage />} />
               </Route>
             </Route>

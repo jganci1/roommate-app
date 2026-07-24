@@ -22,10 +22,10 @@ export function useBills(monthKey: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthKey])
 
-  const addBill = async (category: string, amount: number, notes: string) => {
+  const addBill = async (category: string, amount: number, notes: string, dueDate: string | null) => {
     await supabase
       .from('bills')
-      .insert({ category, amount, month: monthKey, notes: notes || null })
+      .insert({ category, amount, month: monthKey, due_date: dueDate, notes: notes || null })
     await fetchBills()
   }
 
