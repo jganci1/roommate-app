@@ -1,20 +1,29 @@
-import { addDays, addWeeks, format, startOfWeek } from 'date-fns'
+import {
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  startOfMonth,
+  startOfWeek,
+} from 'date-fns'
 
-export function getWeekDays(anchor: Date): Date[] {
-  const start = startOfWeek(anchor, { weekStartsOn: 1 })
-  return Array.from({ length: 7 }, (_, i) => addDays(start, i))
+export function getMonthGridDays(anchor: Date): Date[] {
+  const start = startOfWeek(startOfMonth(anchor), { weekStartsOn: 1 })
+  const end = endOfWeek(endOfMonth(anchor), { weekStartsOn: 1 })
+  return eachDayOfInterval({ start, end })
 }
 
-export function shiftWeek(anchor: Date, delta: number): Date {
-  return addWeeks(anchor, delta)
+export function shiftMonth(anchor: Date, delta: number): Date {
+  return addMonths(anchor, delta)
 }
 
 export function toDateKey(date: Date): string {
   return format(date, 'yyyy-MM-dd')
 }
 
-export function weekRangeLabel(days: Date[]): string {
-  return `${format(days[0], 'MMM d')} – ${format(days[6], 'MMM d, yyyy')}`
+export function monthYearLabel(date: Date): string {
+  return format(date, 'MMMM yyyy')
 }
 
 export function monthKey(date: Date): string {

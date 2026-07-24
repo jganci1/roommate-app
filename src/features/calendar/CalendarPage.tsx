@@ -2,30 +2,37 @@ import { useMemo, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
 import { useAuth } from '../../auth/useAuth'
-import { getWeekDays, shiftWeek, weekRangeLabel } from '../../utils/dateUtils'
+import { getMonthGridDays, monthYearLabel, shiftMonth, toDateKey } from '../../utils/dateUtils'
 import { useDayStatus } from './useDayStatus'
-import { WeekView } from './WeekView'
+import { MonthGrid } from './MonthGrid'
+import { DayDetailPanel } from './DayDetailPanel'
 
 export function CalendarPage() {
-  const [anchor, setAnchor] = useState(new Date())
+  const [monthAnchor, setMonthAnchor] = useState(new Date())
+  const [selectedDateKey, setSelectedDateKey] = useState(toDateKey(new Date()))
   const { user } = useAuth()
-  const days = useMemo(() => getWeekDays(anchor), [anchor])
+  const days = useMemo(() => getMonthGridDays(monthAnchor), [monthAnchor])
   const { profiles, loading, statusFor, toggleOwnStatus } = useDayStatus(days)
+
+  const goToMonth = (next: Date) => {
+    setMonthAnchor(next)
+    setSelectedDateKey(toDateKey(next))
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-          {weekRangeLabel(days)}
+          {monthYearLabel(monthAnchor)}
         </h1>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setAnchor((a) => shiftWeek(a, -1))}>
+          <Button variant="secondary" onClick={() => goToMonth(shiftMonth(monthAnchor, -1))}>
             ← Prev
           </Button>
-          <Button variant="secondary" onClick={() => setAnchor(new Date())}>
+          <Button variant="secondary" onClick={() => goToMonth(new Date())}>
             Today
           </Button>
-          <Button variant="secondary" onClick={() => setAnchor((a) => shiftWeek(a, 1))}>
+          <Button variant="secondary" onClick={() => goToMonth(shiftMonth(monthAnchor, 1))}>
             Next →
           </Button>
         </div>
@@ -37,15 +44,25 @@ export function CalendarPage() {
           <span className="text-sm text-slate-500 dark:text-slate-400">Loading calendar…</span>
         </div>
       ) : (
-        <WeekView
-          days={days}
-          profiles={profiles}
-          statusFor={statusFor}
-          onToggleOwn={(dateKey) => user && toggleOwnStatus(user.id, dateKey)}
-        />
+        <>
+          <MonthGrid
+            days={days}
+            monthAnchor={monthAnchor}
+            profiles={profiles}
+            statusFor={statusFor}
+            selectedDateKey={selectedDateKey}
+            onSelectDay={setSelectedDateKey}
+          />
+          <DayDetailPanel
+            dateKey={selectedDateKey}
+            profiles={profiles}
+            statusFor={statusFor}
+            onToggleOwn={() => user && toggleOwnStatus(user.id, selectedDateKey)}
+          />
+        </>
       )}
       <p className="text-xs text-slate-400 dark:text-slate-500">
-        Tap your own tile to mark yourself home or away for that day.
+        Tap a day to see who's home, then use the button to mark yourself home or away.
       </p>
     </div>
   )
