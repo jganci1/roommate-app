@@ -2,7 +2,7 @@
 
 A shared web app for people living in a house together: a weekly calendar of who's around, a live check-in/checkout board, a shared supply list, local weather, common contacts, requests, and monthly bill itemization.
 
-Everyone signs in with their own account and sees the same shared data, synced live via [Supabase](https://supabase.com).
+Everyone signs in with their own account, then creates a new household or joins an existing one with an invite code. Every roommate in the same household sees the same shared data, synced live via [Supabase](https://supabase.com) — one Supabase project can host any number of separate households, each fully isolated from the others.
 
 **Live app:** https://roommate-app-mu.vercel.app
 
@@ -47,7 +47,7 @@ npm install
 npm run dev
 ```
 
-Open the printed local URL (e.g. `http://localhost:5173`) — each roommate signs up with their name, email, and a password, then can start using the app from their own phone or laptop.
+Open the printed local URL (e.g. `http://localhost:5173`) — each roommate signs up with their name, email, and a password, then either **creates a household** (picking a name, which generates a 6-character invite code) or **joins one** by entering a code a roommate shared with them. Each household is capped at 10 members. The invite code is always visible on the **Household** page for existing members to share.
 
 ## 6. Weather
 
@@ -67,5 +67,6 @@ npx vercel deploy --prod --yes
 
 ## Notes on the data model
 
-- This app assumes **one household per Supabase project** — every signed-in user can see and edit all shared data. If you ever need to support multiple separate houses from one deployment, the schema would need a `households`/membership table and updated Row Level Security policies; that's a real migration, not a toggle.
-- Supply items, contacts, requests, and bills can be edited or deleted by any signed-in roommate (e.g. anyone can mark an item purchased or close someone else's request) — appropriate for a small trusted household. Calendar entries and your own check-in/checkout status can only be changed by you.
+- Every table (calendar, supply list, contacts, requests, bills, and profiles) carries a `household_id` and is scoped by Row Level Security to `current_household_id()` — a signed-in user can only ever see or write their own household's data, enforced at the database level regardless of what the client sends.
+- All household creation/joining goes through the `create_household()`/`join_household()` database functions rather than direct table access, so the "one household per person" rule and the 10-roommate cap can't be bypassed by calling the API directly.
+- Supply items, contacts, requests, and bills can be edited or deleted by any member of the household (e.g. anyone can mark an item purchased or close someone else's request) — appropriate for a small trusted household. Calendar entries and your own check-in/checkout status can only be changed by you.
