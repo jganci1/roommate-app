@@ -22,13 +22,19 @@ create policy "users update own profile"
   on public.profiles for update to authenticated
   using (id = auth.uid()) with check (id = auth.uid());
 
--- Auto-create a profile row whenever someone signs up.
+-- Auto-create a profile row whenever someone signs up. Capped at 10 roommates
+-- per household (per Supabase project) — raising here aborts the whole
+-- auth.users insert too, so signup fails cleanly rather than leaving an
+-- orphaned auth user with no profile.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 begin
+  if (select count(*) from public.profiles) >= 10 then
+    raise exception 'This household is full (10 roommate maximum).';
+  end if;
   insert into public.profiles (id, display_name)
   values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)));
   return new;
@@ -38,6 +44,20 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- Read-only roommate count, callable by anyone (including signed-out
+-- visitors on the signup page) without exposing full profile rows, which
+-- normally require being authenticated to read.
+create or replace function public.profile_count()
+returns integer
+language sql
+security definer set search_path = public
+stable
+as $$
+  select count(*)::integer from public.profiles;
+$$;
+
+grant execute on function public.profile_count() to anon, authenticated;
 
 -- ============ day_status (weekly calendar) ============
 create table public.day_status (
