@@ -7,7 +7,7 @@ import { Button } from '../ui/Button'
 
 export function AppLayout() {
   const [navOpen, setNavOpen] = useState(false)
-  const { profile } = useAuth()
+  const { profile, household } = useAuth()
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -27,8 +27,8 @@ export function AppLayout() {
               />
             </svg>
           </button>
-          <span className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-            🏠 The House
+          <span className="truncate text-lg font-semibold text-slate-900 dark:text-slate-50">
+            🏠 {household?.name ?? 'Roommate App'}
           </span>
         </div>
         <div className="flex items-center gap-3">

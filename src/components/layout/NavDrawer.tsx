@@ -7,6 +7,7 @@ const links = [
   { to: '/contacts', label: 'Contacts' },
   { to: '/requests', label: 'Requests' },
   { to: '/bills', label: 'Bills' },
+  { to: '/household', label: 'Household' },
 ]
 
 export function NavDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {

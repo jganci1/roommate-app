@@ -10,6 +10,9 @@ import { SupplyListPage } from './features/supplies/SupplyListPage'
 import { ContactsPage } from './features/contacts/ContactsPage'
 import { RequestsPage } from './features/requests/RequestsPage'
 import { BillsPage } from './features/bills/BillsPage'
+import { RequireHousehold } from './household/RequireHousehold'
+import { OnboardingPage } from './household/OnboardingPage'
+import { HouseholdPage } from './household/HouseholdPage'
 
 function App() {
   return (
@@ -19,13 +22,17 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route element={<ProtectedRoute />}>
-            <Route element={<AppLayout />}>
-              <Route index element={<DashboardPage />} />
-              <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/supplies" element={<SupplyListPage />} />
-              <Route path="/contacts" element={<ContactsPage />} />
-              <Route path="/requests" element={<RequestsPage />} />
-              <Route path="/bills" element={<BillsPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route element={<RequireHousehold />}>
+              <Route element={<AppLayout />}>
+                <Route index element={<DashboardPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/supplies" element={<SupplyListPage />} />
+                <Route path="/contacts" element={<ContactsPage />} />
+                <Route path="/requests" element={<RequestsPage />} />
+                <Route path="/bills" element={<BillsPage />} />
+                <Route path="/household" element={<HouseholdPage />} />
+              </Route>
             </Route>
           </Route>
         </Routes>

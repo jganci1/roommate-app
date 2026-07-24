@@ -1,5 +1,14 @@
+export interface Household {
+  id: string
+  name: string
+  join_code: string
+  created_by: string | null
+  created_at: string
+}
+
 export interface Profile {
   id: string
+  household_id: string | null
   display_name: string
   is_home: boolean
   status_updated_at: string

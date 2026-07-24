@@ -1,40 +1,72 @@
 -- Roommate App schema
 -- Run this once in your Supabase project's SQL Editor (Database > SQL Editor > New query).
 -- Safe to re-run only if you drop the tables first; this is a fresh-install script.
+-- (If you're upgrading an existing pre-households database, use the migration
+-- snippet you were given instead of this file — this is the fresh-install version.)
+
+-- ============ households ============
+create table public.households (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  join_code text not null unique,
+  created_by uuid,
+  created_at timestamptz not null default now()
+);
+
+-- No insert/update/delete policy for `authenticated` on purpose — every
+-- mutation goes through create_household()/join_household() below, which run
+-- as security definer and enforce their own rules (one household per person,
+-- 10-roommate cap on join, etc).
+alter table public.households enable row level security;
 
 -- ============ profiles ============
 -- One row per tenant, 1:1 with auth.users. Also doubles as the
 -- check-in/checkout status row, since a person only ever has one current status.
+-- household_id starts null: a new signup isn't in a household until they
+-- create or join one.
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
+  household_id uuid references public.households(id),
   display_name text not null,
   is_home boolean not null default true,
   status_updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
 
+alter table public.households add constraint households_created_by_fkey
+  foreign key (created_by) references public.profiles(id);
+
 alter table public.profiles enable row level security;
 
-create policy "profiles readable by authenticated"
-  on public.profiles for select to authenticated using (true);
+-- Always readable by yourself (so the app can see your household_id is null
+-- and route you to onboarding); readable by household-mates once joined.
+create policy "profiles readable by self or household"
+  on public.profiles for select to authenticated
+  using (id = auth.uid() or household_id = public.current_household_id());
 
 create policy "users update own profile"
   on public.profiles for update to authenticated
   using (id = auth.uid()) with check (id = auth.uid());
 
--- Auto-create a profile row whenever someone signs up. Capped at 10 roommates
--- per household (per Supabase project) — raising here aborts the whole
--- auth.users insert too, so signup fails cleanly rather than leaving an
--- orphaned auth user with no profile.
+-- Looks up the caller's own household_id. security definer so it can read
+-- profiles without recursing through the RLS policy that calls it.
+create or replace function public.current_household_id()
+returns uuid
+language sql
+security definer set search_path = public
+stable
+as $$
+  select household_id from public.profiles where id = auth.uid();
+$$;
+
+-- Auto-create a profile row whenever someone signs up. household_id is left
+-- null; they pick "create" or "join" on first login.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 begin
-  if (select count(*) from public.profiles) >= 10 then
-    raise exception 'This household is full (10 roommate maximum).';
-  end if;
   insert into public.profiles (id, display_name)
   values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)));
   return new;
@@ -45,23 +77,99 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Read-only roommate count, callable by anyone (including signed-out
--- visitors on the signup page) without exposing full profile rows, which
--- normally require being authenticated to read.
-create or replace function public.profile_count()
-returns integer
-language sql
-security definer set search_path = public
-stable
+-- Generates a random, human-typeable join code (excludes ambiguous
+-- characters like 0/O and 1/I), retrying on the rare collision.
+create or replace function public.generate_join_code()
+returns text
+language plpgsql
 as $$
-  select count(*)::integer from public.profiles;
+declare
+  chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  code text;
+  taken boolean;
+begin
+  loop
+    code := '';
+    for i in 1..6 loop
+      code := code || substr(chars, floor(random() * length(chars) + 1)::int, 1);
+    end loop;
+    select exists(select 1 from public.households where join_code = code) into taken;
+    exit when not taken;
+  end loop;
+  return code;
+end;
 $$;
 
-grant execute on function public.profile_count() to anon, authenticated;
+-- Creates a new household and makes the caller its first member.
+create or replace function public.create_household(household_name text)
+returns public.households
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  new_household public.households;
+begin
+  if (select household_id from public.profiles where id = auth.uid()) is not null then
+    raise exception 'You are already in a household.';
+  end if;
+  if trim(household_name) = '' then
+    raise exception 'Household name cannot be empty.';
+  end if;
+
+  insert into public.households (name, join_code, created_by)
+  values (trim(household_name), public.generate_join_code(), auth.uid())
+  returning * into new_household;
+
+  update public.profiles set household_id = new_household.id where id = auth.uid();
+
+  return new_household;
+end;
+$$;
+
+grant execute on function public.create_household(text) to authenticated;
+
+-- Joins the caller to an existing household by its join code. Enforces the
+-- 10-roommate cap per household.
+create or replace function public.join_household(code text)
+returns public.households
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  target public.households;
+  member_count integer;
+begin
+  if (select household_id from public.profiles where id = auth.uid()) is not null then
+    raise exception 'You are already in a household.';
+  end if;
+
+  select * into target from public.households where join_code = upper(trim(code));
+  if target.id is null then
+    raise exception 'No household found with that code.';
+  end if;
+
+  select count(*) into member_count from public.profiles where household_id = target.id;
+  if member_count >= 10 then
+    raise exception 'This household is full (10 roommate maximum).';
+  end if;
+
+  update public.profiles set household_id = target.id where id = auth.uid();
+
+  return target;
+end;
+$$;
+
+grant execute on function public.join_household(text) to authenticated;
+
+-- Now that current_household_id() exists, the households table can allow
+-- members to read their own household's name/join code.
+create policy "households readable by members" on public.households
+  for select to authenticated using (id = public.current_household_id());
 
 -- ============ day_status (weekly calendar) ============
 create table public.day_status (
   id uuid primary key default gen_random_uuid(),
+  household_id uuid not null default public.current_household_id() references public.households(id),
   user_id uuid not null references public.profiles(id) on delete cascade,
   date date not null,
   status text not null default 'home' check (status in ('home', 'away')),
@@ -71,14 +179,15 @@ create table public.day_status (
 create index on public.day_status (date);
 
 alter table public.day_status enable row level security;
-create policy "day_status readable" on public.day_status for select to authenticated using (true);
-create policy "own day_status insert" on public.day_status for insert to authenticated with check (user_id = auth.uid());
-create policy "own day_status update" on public.day_status for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "own day_status delete" on public.day_status for delete to authenticated using (user_id = auth.uid());
+create policy "day_status readable" on public.day_status for select to authenticated using (household_id = public.current_household_id());
+create policy "own day_status insert" on public.day_status for insert to authenticated with check (user_id = auth.uid() and household_id = public.current_household_id());
+create policy "own day_status update" on public.day_status for update to authenticated using (user_id = auth.uid() and household_id = public.current_household_id()) with check (user_id = auth.uid() and household_id = public.current_household_id());
+create policy "own day_status delete" on public.day_status for delete to authenticated using (user_id = auth.uid() and household_id = public.current_household_id());
 
 -- ============ supply_items (shared supply/shopping list) ============
 create table public.supply_items (
   id uuid primary key default gen_random_uuid(),
+  household_id uuid not null default public.current_household_id() references public.households(id),
   name text not null,
   quantity integer not null default 1 check (quantity > 0),
   added_by uuid not null default auth.uid() references public.profiles(id),
@@ -90,14 +199,15 @@ create table public.supply_items (
 create index on public.supply_items (purchased);
 
 alter table public.supply_items enable row level security;
-create policy "supply_items readable" on public.supply_items for select to authenticated using (true);
-create policy "supply_items insert" on public.supply_items for insert to authenticated with check (added_by = auth.uid());
-create policy "supply_items update" on public.supply_items for update to authenticated using (true) with check (true);
-create policy "supply_items delete" on public.supply_items for delete to authenticated using (true);
+create policy "supply_items readable" on public.supply_items for select to authenticated using (household_id = public.current_household_id());
+create policy "supply_items insert" on public.supply_items for insert to authenticated with check (added_by = auth.uid() and household_id = public.current_household_id());
+create policy "supply_items update" on public.supply_items for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
+create policy "supply_items delete" on public.supply_items for delete to authenticated using (household_id = public.current_household_id());
 
 -- ============ contacts ============
 create table public.contacts (
   id uuid primary key default gen_random_uuid(),
+  household_id uuid not null default public.current_household_id() references public.households(id),
   name text not null,
   role text,
   phone text,
@@ -109,14 +219,15 @@ create table public.contacts (
 );
 
 alter table public.contacts enable row level security;
-create policy "contacts readable" on public.contacts for select to authenticated using (true);
-create policy "contacts insert" on public.contacts for insert to authenticated with check (created_by = auth.uid());
-create policy "contacts update" on public.contacts for update to authenticated using (true) with check (true);
-create policy "contacts delete" on public.contacts for delete to authenticated using (true);
+create policy "contacts readable" on public.contacts for select to authenticated using (household_id = public.current_household_id());
+create policy "contacts insert" on public.contacts for insert to authenticated with check (created_by = auth.uid() and household_id = public.current_household_id());
+create policy "contacts update" on public.contacts for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
+create policy "contacts delete" on public.contacts for delete to authenticated using (household_id = public.current_household_id());
 
 -- ============ requests ============
 create table public.requests (
   id uuid primary key default gen_random_uuid(),
+  household_id uuid not null default public.current_household_id() references public.households(id),
   title text not null,
   description text,
   status text not null default 'open' check (status in ('open', 'in_progress', 'done')),
@@ -127,14 +238,15 @@ create table public.requests (
 create index on public.requests (status);
 
 alter table public.requests enable row level security;
-create policy "requests readable" on public.requests for select to authenticated using (true);
-create policy "requests insert" on public.requests for insert to authenticated with check (created_by = auth.uid());
-create policy "requests update" on public.requests for update to authenticated using (true) with check (true);
-create policy "requests delete" on public.requests for delete to authenticated using (true);
+create policy "requests readable" on public.requests for select to authenticated using (household_id = public.current_household_id());
+create policy "requests insert" on public.requests for insert to authenticated with check (created_by = auth.uid() and household_id = public.current_household_id());
+create policy "requests update" on public.requests for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
+create policy "requests delete" on public.requests for delete to authenticated using (household_id = public.current_household_id());
 
 -- ============ bills (monthly utilities / rent / other costs) ============
 create table public.bills (
   id uuid primary key default gen_random_uuid(),
+  household_id uuid not null default public.current_household_id() references public.households(id),
   category text not null,        -- e.g. Rent, Electricity, Internet, Water, Gas, Other
   amount numeric(10, 2) not null check (amount >= 0),
   month date not null,           -- always the 1st of the month, e.g. 2026-07-01
@@ -145,10 +257,10 @@ create table public.bills (
 create index on public.bills (month);
 
 alter table public.bills enable row level security;
-create policy "bills readable" on public.bills for select to authenticated using (true);
-create policy "bills insert" on public.bills for insert to authenticated with check (created_by = auth.uid());
-create policy "bills update" on public.bills for update to authenticated using (true) with check (true);
-create policy "bills delete" on public.bills for delete to authenticated using (true);
+create policy "bills readable" on public.bills for select to authenticated using (household_id = public.current_household_id());
+create policy "bills insert" on public.bills for insert to authenticated with check (created_by = auth.uid() and household_id = public.current_household_id());
+create policy "bills update" on public.bills for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
+create policy "bills delete" on public.bills for delete to authenticated using (household_id = public.current_household_id());
 
 -- ============ updated_at triggers ============
 create or replace function public.set_updated_at()
@@ -165,7 +277,8 @@ create trigger day_status_set_updated_at before update on public.day_status
 
 -- ============ Realtime ============
 -- Lets the app subscribe to live changes for the check-in board, supply list,
--- and requests without polling.
+-- and requests without polling. Supabase Realtime enforces each subscriber's
+-- SELECT RLS policy, so this stays household-scoped automatically.
 alter publication supabase_realtime add table public.profiles;
 alter publication supabase_realtime add table public.supply_items;
 alter publication supabase_realtime add table public.requests;
