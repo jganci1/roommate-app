@@ -4,6 +4,8 @@ A shared web app for people living in a house together: a weekly calendar of who
 
 Everyone signs in with their own account and sees the same shared data, synced live via [Supabase](https://supabase.com).
 
+**Live app:** https://roommate-app-mu.vercel.app
+
 ## 1. Create a Supabase project
 
 1. Go to [supabase.com](https://supabase.com) and create a free account/project (pick any name/region/password — the password is only for the Postgres database, not for your roommates' logins).
@@ -51,9 +53,17 @@ Open the printed local URL (e.g. `http://localhost:5173`) — each roommate sign
 
 The weather widget asks the browser for your location (a normal browser/OS permission prompt on both iPhone and Android) and pulls current conditions + a 5-day forecast from [Open-Meteo](https://open-meteo.com) — free, no API key needed. If location access is denied, the widget shows a retry option instead of local weather.
 
-## Deploying so roommates can use it from anywhere
+## Deployment
 
-Right now `npm run dev` only serves the app on your own computer. To make it reachable from everyone's phones over the internet, deploy the `roommate-app` folder to a static host such as [Vercel](https://vercel.com) or [Netlify](https://netlify.com) (both have free tiers and support Vite out of the box) and set the same two `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` environment variables in their dashboard. Ask if you'd like help setting that up.
+The app is deployed to Vercel at **https://roommate-app-mu.vercel.app** — that's the URL your roommates should use, from any phone or computer. `vercel.json` contains a rewrite rule so client-side routes (`/calendar`, `/supplies`, etc.) work on direct load/refresh, not just via in-app navigation.
+
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set as environment variables in the Vercel project (Production + Preview). To ship a change: commit it, then from `roommate-app` run:
+
+```bash
+npx vercel deploy --prod --yes
+```
+
+`npm run dev` still works for local development against the same Supabase project.
 
 ## Notes on the data model
 
