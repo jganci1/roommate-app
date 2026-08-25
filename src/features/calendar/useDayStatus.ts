@@ -28,7 +28,7 @@ export function useDayStatus(weekDays: Date[]) {
   }, [fromKey, toKey])
 
   const statusFor = (userId: string, dateKey: string): 'home' | 'away' =>
-    statuses.find((s) => s.user_id === userId && s.date === dateKey)?.status ?? 'home'
+    statuses.find((s) => s.user_id === userId && s.date === dateKey)?.status ?? 'away'
 
   const toggleOwnStatus = async (userId: string, dateKey: string) => {
     const current = statusFor(userId, dateKey)
