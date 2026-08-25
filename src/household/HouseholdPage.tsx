@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button'
 import { Spinner } from '../components/ui/Spinner'
 import { useAuth } from '../auth/useAuth'
 import { useHouseholdMembers } from './useHouseholdMembers'
+import { HouseholdAddressCard } from './HouseholdAddressCard'
 
 export function HouseholdPage() {
   const { household } = useAuth()
@@ -34,6 +35,8 @@ export function HouseholdPage() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{household.name}</h1>
+
+      <HouseholdAddressCard />
 
       <Card>
         <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Invite roommates</p>

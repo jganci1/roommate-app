@@ -9,6 +9,9 @@ create table public.households (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   join_code text not null unique,
+  address text,
+  latitude numeric(9, 6),
+  longitude numeric(9, 6),
   created_by uuid,
   created_at timestamptz not null default now()
 );
@@ -160,6 +163,32 @@ end;
 $$;
 
 grant execute on function public.join_household(text) to authenticated;
+
+-- Lets any member set/update the household's address + geocoded
+-- coordinates (used for weather). Kept as an RPC, like the other household
+-- mutations, rather than an open UPDATE policy on the table.
+create or replace function public.update_household_address(new_address text, new_latitude numeric, new_longitude numeric)
+returns public.households
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  updated public.households;
+begin
+  if public.current_household_id() is null then
+    raise exception 'You are not in a household.';
+  end if;
+
+  update public.households
+  set address = new_address, latitude = new_latitude, longitude = new_longitude
+  where id = public.current_household_id()
+  returning * into updated;
+
+  return updated;
+end;
+$$;
+
+grant execute on function public.update_household_address(text, numeric, numeric) to authenticated;
 
 -- Now that current_household_id() exists, the households table can allow
 -- members to read their own household's name/join code.

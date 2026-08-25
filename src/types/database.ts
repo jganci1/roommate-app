@@ -2,6 +2,9 @@ export interface Household {
   id: string
   name: string
   join_code: string
+  address: string | null
+  latitude: number | null
+  longitude: number | null
   created_by: string | null
   created_at: string
 }

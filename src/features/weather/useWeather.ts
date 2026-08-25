@@ -4,7 +4,6 @@ interface WeatherData {
   temperature: number
   apparentTemperature: number
   weatherCode: number
-  locationLabel: string
   daily: { date: string; max: number; min: number; weatherCode: number }[]
 }
 
@@ -50,7 +49,6 @@ export function useWeather(coords: { latitude: number; longitude: number } | nul
             temperature: json.current.temperature_2m,
             apparentTemperature: json.current.apparent_temperature,
             weatherCode: json.current.weather_code,
-            locationLabel: `${coords.latitude.toFixed(2)}, ${coords.longitude.toFixed(2)}`,
             daily: (json.daily.time as string[]).map((date, i) => ({
               date,
               max: json.daily.temperature_2m_max[i],

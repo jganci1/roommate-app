@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
-import { useGeolocation } from './useGeolocation'
+import { useAuth } from '../../auth/useAuth'
 import { useWeather } from './useWeather'
 import { describeWeatherCode } from './weatherCodes'
 
@@ -9,19 +11,17 @@ const dayLabel = (dateStr: string) =>
   new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short' })
 
 export function WeatherWidget() {
-  const geo = useGeolocation()
-  const weather = useWeather(geo.coords)
+  const { household } = useAuth()
+  const coords = useMemo(
+    () =>
+      household?.latitude != null && household?.longitude != null
+        ? { latitude: household.latitude, longitude: household.longitude }
+        : null,
+    [household],
+  )
+  const weather = useWeather(coords)
 
-  if (geo.status === 'idle' || geo.status === 'loading') {
-    return (
-      <Card className="flex items-center gap-3">
-        <Spinner />
-        <span className="text-sm text-slate-500 dark:text-slate-400">Getting your location…</span>
-      </Card>
-    )
-  }
-
-  if (geo.status === 'denied' || geo.status === 'error') {
+  if (!coords) {
     return (
       <Card className="flex items-center justify-between gap-3">
         <div>
@@ -29,14 +29,12 @@ export function WeatherWidget() {
             Weather unavailable
           </p>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {geo.status === 'denied'
-              ? 'Location access was denied. Enable it in your browser/phone settings to see local weather.'
-              : geo.errorMessage}
+            Set the house address to see local weather.
           </p>
         </div>
-        <Button variant="secondary" onClick={geo.retry}>
-          Retry
-        </Button>
+        <Link to="/household">
+          <Button variant="secondary">Set address</Button>
+        </Link>
       </Card>
     )
   }
@@ -52,13 +50,10 @@ export function WeatherWidget() {
 
   if (weather.status === 'error' || !weather.data) {
     return (
-      <Card className="flex items-center justify-between gap-3">
+      <Card>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Couldn't load weather{weather.errorMessage ? `: ${weather.errorMessage}` : '.'}
         </p>
-        <Button variant="secondary" onClick={geo.retry}>
-          Retry
-        </Button>
       </Card>
     )
   }
@@ -69,7 +64,9 @@ export function WeatherWidget() {
     <Card>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Weather near you</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Weather at {household?.address ?? 'the house'}
+          </p>
           <p className="text-3xl font-semibold text-slate-900 dark:text-slate-50">
             {Math.round(weather.data.temperature)}°F
           </p>
