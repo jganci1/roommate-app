@@ -3,7 +3,14 @@
 Shared household web app: calendar, live check-in/checkout board, supply list, weather, contacts, requests, bills, and events (incl. recurring birthdays). See [README.md](README.md) for full setup steps (Supabase project creation, env vars, running locally).
 
 **Live app:** https://roommate-app-mu.vercel.app
-**Deploy:** pushing to `master` auto-deploys to Vercel (Git integration is connected — no manual `vercel deploy` needed). Vercel/Supabase dashboard access are separate from GitHub access and not assumed here; if you need either, ask.
+**Deploy:** pushing to `master` auto-deploys to Vercel (Git integration is connected). You almost never need direct Vercel access — a normal `git push` is enough to ship.
+
+## Access varies per collaborator
+
+GitHub, Vercel, and Supabase access are three separate, independent grants — having one doesn't imply the others. **At the start of a session, say what you personally have access to** (e.g. "I have GitHub write access and Supabase dashboard access, no Vercel login") so Claude calibrates correctly instead of guessing or assuming everyone has the same setup:
+- No Vercel access → don't run `vercel` CLI commands, they'll just fail with an auth error. Not a problem: `git push` to `master` already deploys automatically.
+- Have Supabase dashboard access → you can paste and run schema migration SQL yourself in the SQL Editor at supabase.com, rather than asking someone else to run it.
+- No Supabase access → draft the migration SQL and hand it to a collaborator who has dashboard access to run, same as the `git push`-only workflow above.
 
 ## Stack
 
