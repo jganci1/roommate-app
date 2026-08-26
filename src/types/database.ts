@@ -82,3 +82,41 @@ export interface Event {
   created_at: string
   updated_at: string
 }
+
+export interface Stay {
+  id: string
+  label: string
+  start_date: string
+  end_date: string
+  notes: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface HouseGuide {
+  id: string
+  wifi_network: string | null
+  wifi_password: string | null
+  door_code: string | null
+  house_rules: string | null
+  local_tips: string | null
+  emergency_info: string | null
+  updated_by: string | null
+  updated_at: string
+}
+
+export interface HandoffNote {
+  id: string
+  note: string
+  resolved: boolean
+  created_by: string
+  created_at: string
+}
+
+export interface JournalEntry {
+  id: string
+  body: string
+  created_by: string
+  created_at: string
+}

@@ -11,6 +11,10 @@ import { ContactsPage } from './features/contacts/ContactsPage'
 import { RequestsPage } from './features/requests/RequestsPage'
 import { BillsPage } from './features/bills/BillsPage'
 import { EventsPage } from './features/events/EventsPage'
+import { SchedulePage } from './features/schedule/SchedulePage'
+import { GuidePage } from './features/guide/GuidePage'
+import { HandoffPage } from './features/handoff/HandoffPage'
+import { JournalPage } from './features/journal/JournalPage'
 import { RequireHousehold } from './household/RequireHousehold'
 import { OnboardingPage } from './household/OnboardingPage'
 import { HouseholdPage } from './household/HouseholdPage'
@@ -33,6 +37,10 @@ function App() {
                 <Route path="/requests" element={<RequestsPage />} />
                 <Route path="/bills" element={<BillsPage />} />
                 <Route path="/events" element={<EventsPage />} />
+                <Route path="/schedule" element={<SchedulePage />} />
+                <Route path="/guide" element={<GuidePage />} />
+                <Route path="/handoff" element={<HandoffPage />} />
+                <Route path="/journal" element={<JournalPage />} />
                 <Route path="/household" element={<HouseholdPage />} />
               </Route>
             </Route>

@@ -317,6 +317,78 @@ create policy "bills insert" on public.bills for insert to authenticated with ch
 create policy "bills update" on public.bills for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
 create policy "bills delete" on public.bills for delete to authenticated using (household_id = public.current_household_id());
 
+-- ============ stays (rotation schedule — who has the house when) ============
+create table public.stays (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null default public.current_household_id() references public.households(id),
+  label text not null,           -- e.g. "Tony & Natalie" — free text, not tied to one profile
+  start_date date not null,
+  end_date date not null check (end_date >= start_date),
+  notes text,
+  created_by uuid not null default auth.uid() references public.profiles(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index on public.stays (household_id, start_date);
+
+alter table public.stays enable row level security;
+create policy "stays readable" on public.stays for select to authenticated using (household_id = public.current_household_id());
+create policy "stays insert" on public.stays for insert to authenticated with check (created_by = auth.uid() and household_id = public.current_household_id());
+create policy "stays update" on public.stays for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
+create policy "stays delete" on public.stays for delete to authenticated using (household_id = public.current_household_id());
+
+-- ============ house_guide (wifi, codes, house rules, local tips — one row per household) ============
+create table public.house_guide (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null unique default public.current_household_id() references public.households(id),
+  wifi_network text,
+  wifi_password text,
+  door_code text,
+  house_rules text,
+  local_tips text,
+  emergency_info text,
+  updated_by uuid references public.profiles(id),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.house_guide enable row level security;
+create policy "house_guide readable" on public.house_guide for select to authenticated using (household_id = public.current_household_id());
+create policy "house_guide insert" on public.house_guide for insert to authenticated with check (household_id = public.current_household_id());
+create policy "house_guide update" on public.house_guide for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
+
+-- ============ handoff_notes (heads-up notes for the next arriving crew) ============
+create table public.handoff_notes (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null default public.current_household_id() references public.households(id),
+  note text not null,
+  resolved boolean not null default false,
+  created_by uuid not null default auth.uid() references public.profiles(id),
+  created_at timestamptz not null default now()
+);
+create index on public.handoff_notes (resolved);
+
+alter table public.handoff_notes enable row level security;
+create policy "handoff_notes readable" on public.handoff_notes for select to authenticated using (household_id = public.current_household_id());
+create policy "handoff_notes insert" on public.handoff_notes for insert to authenticated with check (created_by = auth.uid() and household_id = public.current_household_id());
+create policy "handoff_notes update" on public.handoff_notes for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
+create policy "handoff_notes delete" on public.handoff_notes for delete to authenticated using (household_id = public.current_household_id());
+
+-- ============ journal_entries (shared house guestbook) ============
+create table public.journal_entries (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null default public.current_household_id() references public.households(id),
+  body text not null,
+  created_by uuid not null default auth.uid() references public.profiles(id),
+  created_at timestamptz not null default now()
+);
+create index on public.journal_entries (created_at);
+
+alter table public.journal_entries enable row level security;
+create policy "journal_entries readable" on public.journal_entries for select to authenticated using (household_id = public.current_household_id());
+create policy "journal_entries insert" on public.journal_entries for insert to authenticated with check (created_by = auth.uid() and household_id = public.current_household_id());
+create policy "journal_entries update" on public.journal_entries for update to authenticated using (household_id = public.current_household_id()) with check (household_id = public.current_household_id());
+create policy "journal_entries delete" on public.journal_entries for delete to authenticated using (household_id = public.current_household_id());
+
 -- ============ updated_at triggers ============
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
@@ -330,6 +402,10 @@ create trigger requests_set_updated_at before update on public.requests
 create trigger day_status_set_updated_at before update on public.day_status
   for each row execute function public.set_updated_at();
 create trigger events_set_updated_at before update on public.events
+  for each row execute function public.set_updated_at();
+create trigger stays_set_updated_at before update on public.stays
+  for each row execute function public.set_updated_at();
+create trigger house_guide_set_updated_at before update on public.house_guide
   for each row execute function public.set_updated_at();
 
 -- ============ Realtime ============

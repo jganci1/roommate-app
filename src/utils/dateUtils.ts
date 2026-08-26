@@ -33,3 +33,12 @@ export function monthKey(date: Date): string {
 export function monthLabel(dateStr: string): string {
   return format(new Date(`${dateStr}T00:00:00`), 'MMMM yyyy')
 }
+
+export function shortDateLabel(dateStr: string): string {
+  return format(new Date(`${dateStr}T00:00:00`), 'MMM d')
+}
+
+export function dateRangeLabel(startStr: string, endStr: string): string {
+  if (startStr === endStr) return shortDateLabel(startStr)
+  return `${shortDateLabel(startStr)} – ${shortDateLabel(endStr)}`
+}

@@ -2,11 +2,15 @@ import { NavLink } from 'react-router-dom'
 
 const links = [
   { to: '/', label: 'Home', end: true },
+  { to: '/schedule', label: 'Schedule' },
   { to: '/calendar', label: 'Calendar' },
   { to: '/events', label: 'Events' },
   { to: '/supplies', label: 'Supplies' },
   { to: '/contacts', label: 'Contacts' },
   { to: '/requests', label: 'Requests' },
+  { to: '/handoff', label: 'Handoff notes' },
+  { to: '/journal', label: 'House journal' },
+  { to: '/guide', label: 'House guide' },
   { to: '/bills', label: 'Bills' },
   { to: '/household', label: 'Household' },
 ]
