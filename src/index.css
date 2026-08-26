@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
+/* Warm "driftwood sand" neutrals in place of Tailwind's default cool slate,
+   so every existing slate-* utility (page backgrounds, cards, borders, text)
+   reads as beach sand/driftwood instead of blue-gray, with no component
+   changes needed. Paired with the app's existing teal accent for the water. */
+@theme {
+  --color-white: #fffdf8;
+  --color-slate-50: #faf6ec;
+  --color-slate-100: #f2e9d3;
+  --color-slate-200: #e3d3ac;
+  --color-slate-300: #cdb37e;
+  --color-slate-400: #a98b5b;
+  --color-slate-500: #8a6d48;
+  --color-slate-600: #6c5436;
+  --color-slate-700: #543f29;
+  --color-slate-800: #3a2b1c;
+  --color-slate-900: #241a10;
+  --color-slate-950: #150f09;
+}
+
 :root {
   color-scheme: light dark;
 }
@@ -19,4 +38,16 @@ body {
     Roboto,
     sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Shared full-page background for auth/onboarding screens and the app shell:
+   pale foam-teal fading into sand (light) or deep ocean fading into night (dark). */
+.beach-bg {
+  background: linear-gradient(180deg, #eaf6f1 0%, #faf6ec 55%, #f2e9d3 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .beach-bg {
+    background: linear-gradient(180deg, #0b1f1d 0%, #150f09 60%, #0f0b06 100%);
+  }
 }
