@@ -10,6 +10,7 @@ export function HouseholdAddressCard() {
   const [input, setInput] = useState(household?.address ?? '')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [weatherLocation, setWeatherLocation] = useState<string | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -17,14 +18,15 @@ export function HouseholdAddressCard() {
     setSubmitting(true)
     setError(null)
     try {
-      const geocoded = await geocodeAddress(input.trim())
+      const address = input.trim()
+      const geocoded = await geocodeAddress(address)
       const { error: rpcError } = await supabase.rpc('update_household_address', {
-        new_address: geocoded.label,
+        new_address: address,
         new_latitude: geocoded.latitude,
         new_longitude: geocoded.longitude,
       })
       if (rpcError) throw rpcError
-      setInput(geocoded.label)
+      setWeatherLocation(geocoded.label)
       await refreshProfile()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
@@ -37,8 +39,8 @@ export function HouseholdAddressCard() {
     <Card>
       <p className="text-sm font-medium text-slate-700 dark:text-slate-200">House address</p>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        Used for local weather — a city, zip, or full address all work. Only affects weather, not
-        privacy of your exact location.
+        Shown to your household and used for local weather. A city or zip geocodes directly; a
+        full street address falls back to its city/state for the weather lookup.
       </p>
       <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
         <input
@@ -55,6 +57,7 @@ export function HouseholdAddressCard() {
       {household?.address && !error && (
         <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
           Currently set to: {household.address}
+          {weatherLocation && <> — weather is pulled for {weatherLocation}</>}
         </p>
       )}
     </Card>
