@@ -27,9 +27,41 @@ export function AppLayout() {
               />
             </svg>
           </button>
-          <span className="truncate text-lg font-semibold text-slate-900 dark:text-slate-50">
-            🏠 {household?.name ?? 'Roommate App'}
-          </span>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <svg
+              width="30"
+              height="30"
+              viewBox="0 0 32 32"
+              fill="none"
+              aria-hidden="true"
+              className="shrink-0"
+            >
+              <circle cx="16" cy="11" r="6" fill="#d97706" />
+              <path
+                d="M2 21c2.8-2.6 5.6-2.6 8.4 0s5.6 2.6 8.4 0 5.6-2.6 8.4 0"
+                stroke="#0d9488"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+              />
+              <path
+                d="M2 26c2.8-2.6 5.6-2.6 8.4 0s5.6 2.6 8.4 0 5.6-2.6 8.4 0"
+                stroke="#2dd4bf"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                opacity="0.7"
+              />
+            </svg>
+            <div className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                {household?.name ?? 'Roommate App'}
+              </span>
+              {household?.address && (
+                <span className="truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  {household.address}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           {profile && (
