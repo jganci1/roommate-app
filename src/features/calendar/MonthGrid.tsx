@@ -1,5 +1,5 @@
 import { isSameMonth, isToday } from 'date-fns'
-import type { Profile } from '../../types/database'
+import type { Profile, Stay } from '../../types/database'
 import { toDateKey } from '../../utils/dateUtils'
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -9,6 +9,7 @@ export function MonthGrid({
   monthAnchor,
   profiles,
   statusFor,
+  stays,
   selectedDateKey,
   onSelectDay,
 }: {
@@ -16,6 +17,7 @@ export function MonthGrid({
   monthAnchor: Date
   profiles: Profile[]
   statusFor: (userId: string, dateKey: string) => 'home' | 'away'
+  stays: Stay[]
   selectedDateKey: string
   onSelectDay: (dateKey: string) => void
 }) {
@@ -37,12 +39,13 @@ export function MonthGrid({
           const inMonth = isSameMonth(date, monthAnchor)
           const today = isToday(date)
           const selected = dateKey === selectedDateKey
+          const stay = stays.find((s) => s.start_date <= dateKey && s.end_date >= dateKey)
 
           return (
             <button
               key={dateKey}
               onClick={() => onSelectDay(dateKey)}
-              className={`flex min-h-16 flex-col items-center gap-1 border-b border-r border-slate-100 p-1 text-left last:border-r-0 dark:border-slate-800 [&:nth-child(7n)]:border-r-0 ${
+              className={`flex min-h-20 flex-col items-center gap-1 border-b border-r border-slate-100 p-1 text-left last:border-r-0 dark:border-slate-800 [&:nth-child(7n)]:border-r-0 ${
                 selected
                   ? 'bg-teal-50 dark:bg-teal-950'
                   : inMonth
@@ -79,6 +82,14 @@ export function MonthGrid({
                   )
                 })}
               </div>
+              {stay && (
+                <span
+                  title={stay.label}
+                  className="mt-auto w-full truncate rounded bg-amber-100 px-1 text-center text-[8px] font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                >
+                  {stay.label}
+                </span>
+              )}
             </button>
           )
         })}

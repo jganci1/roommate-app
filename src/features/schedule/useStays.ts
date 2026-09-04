@@ -22,6 +22,9 @@ export function useStays() {
   const overlapping = (start: string, end: string) =>
     stays.filter((s) => start <= s.end_date && end >= s.start_date)
 
+  const stayForDate = (dateKey: string) =>
+    stays.find((s) => s.start_date <= dateKey && s.end_date >= dateKey) ?? null
+
   const addStay = async (input: StayInput) => {
     await supabase.from('stays').insert(input)
     await fetchStays()
@@ -36,5 +39,5 @@ export function useStays() {
   const currentStay = stays.find((s) => s.start_date <= today && s.end_date >= today) ?? null
   const nextStay = stays.find((s) => s.start_date > today) ?? null
 
-  return { stays, loading, addStay, removeStay, overlapping, currentStay, nextStay }
+  return { stays, loading, addStay, removeStay, overlapping, stayForDate, currentStay, nextStay }
 }
