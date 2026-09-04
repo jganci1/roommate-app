@@ -73,7 +73,7 @@ export function MonthGrid({
                       title={p.display_name}
                       className={`flex h-3.5 w-3.5 items-center justify-center rounded-full text-[8px] font-medium ${
                         status === 'home'
-                          ? 'bg-teal-500 text-white'
+                          ? 'bg-green-500 text-white'
                           : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
                       }`}
                     >

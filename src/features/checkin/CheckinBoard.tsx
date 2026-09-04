@@ -36,7 +36,7 @@ export function CheckinBoard() {
             <li key={p.id} className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 <span
-                  className={`h-2.5 w-2.5 rounded-full ${p.is_home ? 'bg-teal-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                  className={`h-2.5 w-2.5 rounded-full ${p.is_home ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`}
                   aria-hidden="true"
                 />
                 <div>

@@ -59,7 +59,7 @@ export function DayDetailPanel({
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     status === 'home'
-                      ? 'bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300'
+                      ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300'
                       : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                   }`}
                 >

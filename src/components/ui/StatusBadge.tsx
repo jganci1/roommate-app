@@ -1,5 +1,5 @@
 const styles: Record<string, string> = {
-  home: 'bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300',
+  home: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
   away: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
   open: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
   in_progress: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
