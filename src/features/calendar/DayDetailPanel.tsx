@@ -10,12 +10,14 @@ export function DayDetailPanel({
   statusFor,
   stay,
   onToggleOwn,
+  onRemoveStay,
 }: {
   dateKey: string
   profiles: Profile[]
   statusFor: (userId: string, dateKey: string) => 'home' | 'away'
   stay: Stay | null
   onToggleOwn: () => void
+  onRemoveStay?: (id: string) => void
 }) {
   const { user } = useAuth()
 
@@ -25,9 +27,19 @@ export function DayDetailPanel({
         {format(new Date(`${dateKey}T00:00:00`), 'EEEE, MMMM d')}
       </h2>
       {stay && (
-        <p className="mb-3 text-sm font-medium text-amber-700 dark:text-amber-400">
-          🏖️ {stay.label} are staying
-        </p>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+            🏖️ {stay.label} are staying
+          </p>
+          {onRemoveStay && (
+            <button
+              onClick={() => onRemoveStay(stay.id)}
+              className="shrink-0 text-xs font-medium text-slate-400 hover:text-red-600 dark:hover:text-red-400"
+            >
+              Remove
+            </button>
+          )}
+        </div>
       )}
       <ul className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
         {profiles.map((p: Profile) => {

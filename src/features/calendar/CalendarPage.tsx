@@ -15,7 +15,7 @@ export function CalendarPage() {
   const { user } = useAuth()
   const days = useMemo(() => getMonthGridDays(monthAnchor), [monthAnchor])
   const { profiles, loading, statusFor, toggleOwnStatus } = useDayStatus(days)
-  const { stays, stayForDate } = useStays()
+  const { stays, stayForDate, removeStay } = useStays()
 
   const goToMonth = (next: Date) => {
     setMonthAnchor(next)
@@ -65,6 +65,7 @@ export function CalendarPage() {
             statusFor={statusFor}
             stay={stayForDate(selectedDateKey)}
             onToggleOwn={() => user && toggleOwnStatus(user.id, selectedDateKey)}
+            onRemoveStay={removeStay}
           />
         </>
       )}
