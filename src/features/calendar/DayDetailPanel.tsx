@@ -15,7 +15,7 @@ export function DayDetailPanel({
   dateKey: string
   profiles: Profile[]
   statusFor: (userId: string, dateKey: string) => 'home' | 'away'
-  stay: Stay | null
+  stay?: Stay | null
   onToggleOwn: () => void
   onRemoveStay?: (id: string) => void
 }) {
