@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { Button } from '../../components/ui/Button'
-import { toDateKey } from '../../utils/dateUtils'
 import type { StayInput } from './useStays'
 
 export function StayForm({
@@ -11,8 +10,11 @@ export function StayForm({
   checkOverlap: (start: string, end: string) => { label: string; start_date: string; end_date: string }[]
 }) {
   const [label, setLabel] = useState('')
-  const [startDate, setStartDate] = useState(toDateKey(new Date()))
-  const [endDate, setEndDate] = useState(toDateKey(new Date()))
+  // Deliberately blank, not defaulted to today — a form submitted without
+  // touching the date fields used to silently create a one-day "here now"
+  // stay for today, which is confusing for something meant to be scheduled.
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -67,7 +69,7 @@ export function StayForm({
         onChange={(e) => setNotes(e.target.value)}
         className="rounded-xl border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
       />
-      {startDate > endDate && (
+      {startDate && endDate && startDate > endDate && (
         <p className="text-sm text-red-600 dark:text-red-400">End date must be on or after the start date.</p>
       )}
       {conflicts.length > 0 && (
