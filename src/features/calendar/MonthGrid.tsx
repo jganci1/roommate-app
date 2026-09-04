@@ -40,6 +40,7 @@ export function MonthGrid({
           const today = isToday(date)
           const selected = dateKey === selectedDateKey
           const stay = stays.find((s) => s.start_date <= dateKey && s.end_date >= dateKey)
+          const anyoneHome = profiles.some((p) => statusFor(p.id, dateKey) === 'home')
 
           return (
             <button
@@ -48,9 +49,11 @@ export function MonthGrid({
               className={`flex min-h-20 flex-col items-center gap-1 border-b border-r border-slate-100 p-1 text-left last:border-r-0 dark:border-slate-800 [&:nth-child(7n)]:border-r-0 ${
                 selected
                   ? 'bg-teal-50 dark:bg-teal-950'
-                  : inMonth
-                    ? 'bg-white dark:bg-slate-900'
-                    : 'bg-slate-50 dark:bg-slate-950'
+                  : anyoneHome
+                    ? 'bg-green-50 dark:bg-green-950/40'
+                    : inMonth
+                      ? 'bg-white dark:bg-slate-900'
+                      : 'bg-slate-50 dark:bg-slate-950'
               }`}
             >
               <span
